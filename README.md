@@ -72,6 +72,20 @@ source ~/.bashrc
 
 ## Connecting to GitHub
 
+### Create a Personal Access Token (Required)
+
+GitHub no longer accepts passwords for Git operations. You need to create a Personal Access Token (PAT):
+
+1. Go to GitHub.com and sign in
+2. Click your profile picture → **Settings**
+3. Scroll down to **Developer settings** (bottom left)
+4. Click **Personal access tokens** → **Tokens (classic)**
+5. Click **Generate new token** → **Generate new token (classic)**
+6. Give it a name (e.g., "TurtleBot3 Workspace")
+7. Select scopes: Check **repo** (this gives full control of private repositories)
+8. Click **Generate token**
+9. **IMPORTANT**: Copy the token immediately - you won't be able to see it again!
+
 ### Create a New GitHub Repository
 
 1. Go to GitHub and create a new repository (do NOT initialize it with a README, .gitignore, or license)
@@ -79,12 +93,46 @@ source ~/.bashrc
 
 ### Push to GitHub
 
+**Option 1: Using Personal Access Token (HTTPS)**
+
+When prompted for password, paste your Personal Access Token:
+
 ```bash
 cd ~/turtlebot3_ws
 git remote add origin <your-github-repo-url>
 git branch -M main
 git push -u origin main
+# Username: your-github-username
+# Password: paste-your-personal-access-token-here
 ```
+
+**Option 2: Store Credentials (Recommended)**
+
+To avoid entering the token every time, use Git credential helper:
+
+```bash
+# Store credentials (will prompt for username and token)
+git config --global credential.helper store
+
+# Or use cache (stores for 15 minutes)
+git config --global credential.helper cache
+```
+
+**Option 3: Use SSH (Most Secure)**
+
+1. Generate SSH key (if you don't have one):
+   ```bash
+   ssh-keygen -t ed25519 -C "your_email@example.com"
+   cat ~/.ssh/id_ed25519.pub
+   ```
+
+2. Add the public key to GitHub: Settings → SSH and GPG keys → New SSH key
+
+3. Change remote URL to SSH:
+   ```bash
+   git remote set-url origin git@github.com:yourusername/repo-name.git
+   git push -u origin main
+   ```
 
 ## Making Changes
 
