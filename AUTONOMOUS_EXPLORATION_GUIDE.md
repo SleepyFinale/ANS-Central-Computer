@@ -1,78 +1,6 @@
-# TurtleBot3 Workspace - Autonomous Exploration Setup
+# Autonomous Exploration Guide for TurtleBot3
 
-This workspace contains editable TurtleBot3 packages for ROS 2 Humble, configured for autonomous exploration and mapping with Nav2, SLAM Toolbox, and Explore Lite.
-
-## Prerequisites
-
-Before proceeding, ensure you have the following installed:
-
-```bash
-sudo apt update
-sudo apt install git
-sudo apt install ros-humble-navigation2
-sudo apt install ros-humble-slam-toolbox
-```
-
-## Setup Instructions
-
-### 1. Clone the TurtleBot3 Packages
-
-Navigate to the src directory and clone the required packages:
-
-```bash
-cd ~/turtlebot3_ws/src
-git clone -b humble https://github.com/ROBOTIS-GIT/DynamixelSDK.git
-git clone -b humble https://github.com/ROBOTIS-GIT/turtlebot3_msgs.git
-git clone -b humble https://github.com/ROBOTIS-GIT/turtlebot3.git
-```
-
-### 2. Remove Git Directories from Cloned Packages
-
-To make these packages part of your single repository (instead of submodules), remove their .git directories:
-
-```bash
-cd ~/turtlebot3_ws/src
-rm -rf DynamixelSDK/.git
-rm -rf turtlebot3_msgs/.git
-rm -rf turtlebot3/.git
-```
-
-### 3. Build the Workspace
-
-Install colcon build tools if needed:
-```bash
-sudo apt install python3-colcon-common-extensions
-```
-
-Build the workspace:
-```bash
-cd ~/turtlebot3_ws
-source /opt/ros/humble/setup.bash
-colcon build --symlink-install
-source install/setup.bash
-```
-
-### 4. Build Explore Lite
-
-If you want to use Explore Lite for autonomous exploration, build it:
-
-```bash
-cd ~/turtlebot3_ws
-source /opt/ros/humble/setup.bash
-colcon build --packages-select explore_lite --packages-ignore nav2_msgs nav2_voxel_grid nav2_util nav2_lifecycle_manager nav2_map_server nav2_costmap_2d nav2_ros_common navigation2
-source install/setup.bash
-```
-
-Or use the provided build script:
-```bash
-./BUILD_EXPLORE_LITE.sh
-```
-
----
-
-# Autonomous Exploration Guide
-
-**After your robot is running** (`ros2 launch turtlebot3_bringup robot.launch.py` on the robot), run these commands on your **central computer** in **separate terminals**:
+**After your robot is running** (`ros2 launch turtlebot3_bringup robot.launch.py` on the robot), run these commands on your **central computer** in **3 separate terminals**:
 
 ## Setup (Run once per terminal session)
 
@@ -91,11 +19,6 @@ export TURTLEBOT3_MODEL=burger
 source /opt/ros/humble/setup.bash
 export TURTLEBOT3_MODEL=burger
 ros2 launch slam_toolbox online_async_launch.py
-```
-
-**Alternative**: If you prefer Cartographer (your old setup):
-```bash
-ros2 launch turtlebot3_cartographer cartographer.launch.py configuration_basename:=turtlebot3_lds_2d_improved.lua
 ```
 
 ---
@@ -204,23 +127,3 @@ After starting all terminals, check:
   - Make sure robot launch is running
   - Check: `ros2 topic list | grep tf`
   - Wait a bit - TF tree takes time to build
-
----
-
-## Workspace Structure
-
-This workspace includes:
-- **TurtleBot3 packages**: Core robot packages from ROBOTIS
-- **Navigation2**: Navigation stack (can use system packages or workspace version)
-- **SLAM Toolbox**: For mapping (installed via apt)
-- **Explore Lite**: Autonomous exploration package (in `src/m-explore-ros2/`)
-- **Custom Explorer**: Alternative exploration node (in `src/Autonomous-Explorer-and-Mapper-ros2-nav2/`)
-
----
-
-## Additional Resources
-
-- [ROS 2 Documentation](https://docs.ros.org/en/humble/index.html)
-- [Nav2 Documentation](https://navigation.ros.org/)
-- [SLAM Toolbox](https://github.com/SteveMacenski/slam_toolbox)
-- [TurtleBot3](https://www.turtlebot.com/)
