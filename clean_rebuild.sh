@@ -92,6 +92,7 @@ echo ""
 echo "Step 4: Building workspace (this may take a while)..."
 echo "  - Using colcon build with symlink-install"
 echo "  - This will build all packages in dependency order"
+echo "  - turtlebot3_navigation2 and explore_lite will be built"
 echo ""
 
 # Limit parallel jobs to prevent memory exhaustion
@@ -122,7 +123,13 @@ echo "  - Building with $PARALLEL_JOBS parallel workers (to prevent memory issue
 echo "  - To override: PARALLEL_JOBS=N ./clean_rebuild.sh"
 echo ""
 
-colcon build --symlink-install --parallel-workers $PARALLEL_JOBS --cmake-args -DBUILD_TESTING=OFF
+# List of Navigation2 packages to ignore (use system packages instead)
+NAV2_IGNORE_PACKAGES="nav2_common nav_2d_msgs dwb_msgs nav2_msgs nav2_voxel_grid nav2_simple_commander nav2_util nav2_amcl nav2_behavior_tree nav2_lifecycle_manager nav2_map_server nav2_velocity_smoother nav_2d_utils nav2_costmap_2d costmap_queue nav2_collision_monitor nav2_core dwb_core nav2_behaviors nav2_bt_navigator nav2_constrained_smoother nav2_controller nav2_mppi_controller nav2_navfn_planner nav2_planner nav2_regulated_pure_pursuit_controller nav2_route nav2_smac_planner nav2_smoother nav2_theta_star_planner nav2_waypoint_follower dwb_critics dwb_plugins nav2_rotation_shim_controller nav2_rviz_plugins nav2_dwb_controller navigation2 nav2_bringup nav2_ros_common opennav_docking_core opennav_docking_bt nav2_graceful_controller opennav_docking opennav_following"
+
+# Build all packages, but ignore Navigation2 packages in workspace (use system packages)
+colcon build --symlink-install --parallel-workers $PARALLEL_JOBS \
+    --cmake-args -DBUILD_TESTING=OFF \
+    --packages-ignore $NAV2_IGNORE_PACKAGES
 
 # Check build result
 if [ $? -eq 0 ]; then
@@ -135,7 +142,23 @@ if [ $? -eq 0 ]; then
     source install/setup.bash
     echo "  ✓ Workspace sourced"
     echo ""
+    echo "Verifying key packages are built..."
+    if ros2 pkg list | grep -q "turtlebot3_navigation2"; then
+        echo "  ✓ turtlebot3_navigation2 is available"
+    else
+        echo "  ✗ turtlebot3_navigation2 not found"
+    fi
+    if ros2 pkg list | grep -q "explore_lite"; then
+        echo "  ✓ explore_lite is available"
+    else
+        echo "  ✗ explore_lite not found"
+    fi
+    echo ""
     echo "Workspace is ready to use!"
+    echo ""
+    echo "You can now run:"
+    echo "  - ros2 launch turtlebot3_navigation2 navigation2.launch.py"
+    echo "  - ./start_explorer_simple.sh"
     echo ""
 else
     echo ""

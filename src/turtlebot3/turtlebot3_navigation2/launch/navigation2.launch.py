@@ -30,12 +30,10 @@ ROS_DISTRO = os.environ.get('ROS_DISTRO')
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
+    # Default to empty string to skip loading a map (for SLAM)
     map_dir = LaunchConfiguration(
         'map',
-        default=os.path.join(
-            get_package_share_directory('turtlebot3_navigation2'),
-            'map',
-            'map.yaml'))
+        default='')
 
     param_file_name = TURTLEBOT3_MODEL + '.yaml'
     if ROS_DISTRO == 'humble':
@@ -65,7 +63,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'map',
             default_value=map_dir,
-            description='Full path to map file to load'),
+            description='Full path to map file to load (empty string to skip loading a map, useful for SLAM)'),
 
         DeclareLaunchArgument(
             'params_file',

@@ -38,7 +38,7 @@ amcl:
     z_short: 0.05
     scan_topic: scan
     map_topic: map
-    set_initial_pose: false
+    set_initial_pose: true
     always_reset_initial_pose: false
     first_map_only: false
     initial_pose:
@@ -261,6 +261,7 @@ global_costmap:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
         transform_tolerance: 0.1
+        use_maximum: false  # Use overwrite to preserve unknown space for frontier detection
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         inflation_radius: 0.5

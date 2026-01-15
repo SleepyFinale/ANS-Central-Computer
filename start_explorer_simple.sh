@@ -18,5 +18,7 @@ echo "Explorer will wait for /global_costmap/costmap to become available."
 echo ""
 
 # Use Nav2 costmap (recommended when Nav2 is running)
+# Set use_sim_time to match Nav2 configuration (global_costmap uses True)
 ros2 run explore_lite explore --ros-args \
-    --params-file src/m-explore-ros2/explore/config/params_costmap.yaml
+    --params-file src/m-explore-ros2/explore/config/params_costmap.yaml \
+    -p use_sim_time:=True

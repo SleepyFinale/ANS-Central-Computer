@@ -38,6 +38,14 @@ amcl:
     z_rand: 0.5
     z_short: 0.05
     scan_topic: scan
+    set_initial_pose: true
+    always_reset_initial_pose: false
+    first_map_only: false
+    initial_pose:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      yaw: 0.0
 
 amcl_map_client:
   ros__parameters:
@@ -274,6 +282,7 @@ global_costmap:
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
+        use_maximum: false  # Use overwrite to preserve unknown space for frontier detection
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
