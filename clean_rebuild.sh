@@ -143,12 +143,13 @@ if [ $? -eq 0 ]; then
     echo "  ✓ Workspace sourced"
     echo ""
     echo "Verifying key packages are built..."
-    if ros2 pkg list | grep -q "turtlebot3_navigation2"; then
+    PKG_LIST=$(ros2 pkg list 2>/dev/null)
+    if echo "$PKG_LIST" | grep -q "^turtlebot3_navigation2$"; then
         echo "  ✓ turtlebot3_navigation2 is available"
     else
         echo "  ✗ turtlebot3_navigation2 not found"
     fi
-    if ros2 pkg list | grep -q "explore_lite"; then
+    if echo "$PKG_LIST" | grep -q "^explore_lite$"; then
         echo "  ✓ explore_lite is available"
     else
         echo "  ✗ explore_lite not found"
