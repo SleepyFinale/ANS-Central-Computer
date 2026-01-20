@@ -13,12 +13,16 @@ cd ~/turtlebot3_ws
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 
-echo "Starting explorer with Nav2 costmap configuration..."
-echo "Explorer will wait for /global_costmap/costmap to become available."
+echo "Starting explorer with SLAM map (direct from slam_toolbox)..."
+echo "Explorer will wait for /map topic to become available."
+echo ""
+echo "Note: Using SLAM map directly instead of costmap for better frontier detection"
+echo "      when the map is still small or narrow."
 echo ""
 
-# Use Nav2 costmap (recommended when Nav2 is running)
+# Use SLAM map directly (better for exploration when map is small/narrow)
+# The costmap might be too restrictive - using SLAM map gives better frontier detection
 # Set use_sim_time to match Nav2 configuration (global_costmap uses True)
 ros2 run explore_lite explore --ros-args \
-    --params-file src/m-explore-ros2/explore/config/params_costmap.yaml \
+    --params-file src/m-explore-ros2/explore/config/params.yaml \
     -p use_sim_time:=True
