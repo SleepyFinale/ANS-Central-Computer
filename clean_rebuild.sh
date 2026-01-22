@@ -48,12 +48,8 @@ echo "Step 3: Checking system dependencies..."
 MISSING_DEPS=()
 
 # Check for required dependencies
+# Note: Navigation2 packages are ignored (using system packages), so their dependencies are not needed
 REQUIRED_DEPS=(
-    "libyaml-cpp-dev:yaml-cpp"
-    "libeigen3-dev:eigen3"
-    "libgraphicsmagick++1-dev:graphicsmagick"
-    "uuid-dev:uuid"
-    "ros-humble-tf2-sensor-msgs:tf2-sensor-msgs"
 )
 
 for dep_check in "${REQUIRED_DEPS[@]}"; do
