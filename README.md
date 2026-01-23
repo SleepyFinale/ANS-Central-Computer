@@ -284,7 +284,6 @@ ros2 launch turtlebot3_bringup robot.launch.py
 **Verification:**
 
 ```bash
-```bash
 # In a new terminal on Remote PC (with ROS_DOMAIN_ID=30 set)
 ros2 topic list | grep -E "(scan|odom|joint_states)"
 ros2 topic echo /scan --once  # Should show laser scan data
@@ -302,50 +301,40 @@ ros2 topic echo /scan --once  # Should show laser scan data
 # Set ROS_DOMAIN_ID for Blinky
 export ROS_DOMAIN_ID=30
 
-# Setup ROS 2 environment
-source /opt/ros/humble/setup.bash
-export TURTLEBOT3_MODEL=burger
-
-# Launch SLAM Toolbox
-# IMPORTANT: If you see "LaserRangeScan contains X range readings, expected Y" errors,
-# you need to use the laser scan normalizer first (see below).
-
-# For faster map updates during exploration, use the fast config:
-# Note: Use absolute path or run from workspace root
+# Navigate to workspace
 cd ~/turtlebot3_ws
-ros2 launch slam_toolbox online_async_launch.py \
-  slam_params_file:=$(pwd)/src/turtlebot3/turtlebot3_navigation2/param/humble/mapper_params_online_async_fast.yaml
 
-# Or use default (slower map updates):
-# ros2 launch slam_toolbox online_async_launch.py
-```
-
-**If you see "LaserRangeScan contains X range readings, expected Y" errors:**
-
-This means your laser sends variable numbers of readings (216-230), causing slam_toolbox to reject most scans. This prevents the map from updating! Use the laser scan normalizer:
-
-**Easy way (recommended):**
-```bash
-cd ~/turtlebot3_ws
+# Launch SLAM Toolbox with laser scan normalizer (recommended)
+# This automatically handles variable laser scan readings and uses fast map updates
 ./start_slam_with_normalizer.sh
 ```
 
-**Manual way:**
+**What this script does:**
+
+- Starts a laser scan normalizer that fixes variable reading counts (216-230 readings → 228 readings)
+- Launches SLAM Toolbox with fast map update configuration (0.5s intervals)
+- Automatically remaps scan topic to use normalized scans
+- Prevents "LaserRangeScan contains X range readings, expected Y" errors
+
+**Alternative (manual setup - not recommended):**
+
+If you need to run SLAM Toolbox without the normalizer (not recommended due to scan reading issues):
+
 ```bash
-# Terminal 1: Start the laser scan normalizer
-cd ~/turtlebot3_ws
-source install/setup.bash
-python3 src/turtlebot3/turtlebot3_navigation2/scripts/normalize_laser_scan.py
+# Set ROS_DOMAIN_ID for Blinky
+export ROS_DOMAIN_ID=30
 
-# Terminal 2: Launch SLAM Toolbox using the normalized scan
+# Setup ROS 2 environment
 cd ~/turtlebot3_ws
+source /opt/ros/humble/setup.bash
+export TURTLEBOT3_MODEL=burger
+
+# Launch SLAM Toolbox with fast config
 ros2 launch slam_toolbox online_async_launch.py \
-  slam_params_file:=$(pwd)/src/turtlebot3/turtlebot3_navigation2/param/humble/mapper_params_online_async_fast.yaml \
-  scan_topic:=/scan_normalized
+  slam_params_file:=$(pwd)/src/turtlebot3/turtlebot3_navigation2/param/humble/mapper_params_online_async_fast.yaml
 ```
 
-The normalizer will automatically adjust all scans to have exactly 226 readings (matching what slam_toolbox expects), allowing scans to be processed and the map to update properly.
-```
+**Note:** Without the normalizer, you may see "LaserRangeScan contains X range readings, expected Y" errors, which will prevent the map from updating properly. The `./start_slam_with_normalizer.sh` script is the recommended approach.
 
 **Expected output (if working correctly):**
 
@@ -446,7 +435,7 @@ ros2 node list | grep nav2
 ros2 topic list | grep costmap
 
 # Check TF tree
-ros2 run tf2_ros tf2_echo map base_link  # Should work after initial pose is set
+ros2 run tf2_ros tf2_echo map base_footprint  # Should work after initial pose is set
 ```
 
 ---
@@ -763,7 +752,7 @@ ros2 topic hz /map
 ros2 run tf2_ros tf2_monitor
 
 # Check specific transform
-ros2 run tf2_ros tf2_echo map base_link
+ros2 run tf2_ros tf2_echo map base_footprint
 
 # Check transform between map and odom
 ros2 run tf2_ros tf2_echo map odom
