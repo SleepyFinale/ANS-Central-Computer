@@ -43,10 +43,19 @@ sleep 2
 echo "Starting SLAM Toolbox with fast config..."
 echo "Using normalized scan topic: /scan_normalized"
 echo ""
+
+# Real robot default: do NOT use sim time (no /clock).
+# Override by setting USE_SIM_TIME=1 (or true) before running this script.
+USE_SIM_TIME_VALUE="False"
+if [ "${USE_SIM_TIME}" = "1" ] || [ "${USE_SIM_TIME}" = "true" ] || [ "${USE_SIM_TIME}" = "True" ]; then
+    USE_SIM_TIME_VALUE="True"
+fi
+echo "use_sim_time: ${USE_SIM_TIME_VALUE}"
+
 ros2 launch slam_toolbox online_async_launch.py \
     slam_params_file:="$SLAM_CONFIG" \
     scan_topic:=/scan_normalized \
-    use_sim_time:=True
+    use_sim_time:="${USE_SIM_TIME_VALUE}"
 
 # Cleanup: kill normalizer when SLAM exits
 echo "Stopping laser scan normalizer..."
