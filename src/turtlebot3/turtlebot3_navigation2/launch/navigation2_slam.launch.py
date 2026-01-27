@@ -20,9 +20,11 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.actions import ExecuteProcess
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
 from launch_ros.actions import Node
 
 TURTLEBOT3_MODEL = os.environ['TURTLEBOT3_MODEL']
@@ -36,8 +38,9 @@ def generate_launch_description():
     # Pass empty string to disable map_server loading a static file
     map_dir = LaunchConfiguration('map', default='')
 
-    # Use SLAM-specific parameter file for exploration (preserves unknown space)
-    param_file_name = TURTLEBOT3_MODEL + '_slam.yaml'
+    # SLAM/exploration is the default workflow in this workspace.
+    # Use the standard param file to avoid maintaining 2 divergent configs.
+    param_file_name = TURTLEBOT3_MODEL + '.yaml'
     if ROS_DISTRO == 'humble':
         param_dir = LaunchConfiguration(
             'params_file',
@@ -61,6 +64,11 @@ def generate_launch_description():
         'rviz',
         'tb3_navigation2.rviz')
 
+    # Optional: wait for TF tree before launching Nav2 (prevents costmap activation failures)
+    workspace_dir = os.path.expanduser('~/turtlebot3_ws')
+    wait_tf_script = os.path.join(workspace_dir, 'wait_for_tf.py')
+    wait_for_tf = LaunchConfiguration('wait_for_tf', default='true')
+
     return LaunchDescription([
         DeclareLaunchArgument(
             'map',
@@ -76,6 +84,17 @@ def generate_launch_description():
             'use_sim_time',
             default_value='false',
             description='Use simulation (Gazebo) clock if true'),
+
+        DeclareLaunchArgument(
+            'wait_for_tf',
+            default_value='true',
+            description='Wait for TF tree to be ready before starting Nav2'),
+
+        ExecuteProcess(
+            cmd=['python3', wait_tf_script],
+            output='screen',
+            condition=IfCondition(wait_for_tf),
+        ),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([nav2_launch_file_dir, '/bringup_launch.py']),

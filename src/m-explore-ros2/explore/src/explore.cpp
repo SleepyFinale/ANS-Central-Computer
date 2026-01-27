@@ -694,6 +694,11 @@ void Explore::makePlan()
   RCLCPP_INFO(logger_, "Selected frontier at (%.2f, %.2f), cost=%.2f, distance=%.2f",
               target_position.x, target_position.y, frontier->cost, frontier->min_distance);
 
+  // Track goal lifecycle to avoid getting stuck when Nav2 doesn't return a result
+  static rclcpp::Time last_goal_accepted_time = this->now();
+  static geometry_msgs::msg::Point last_goal_target;
+  static bool has_active_goal = false;
+
   // time out if we are not making any progress
   bool same_goal = same_point(prev_goal_, target_position);
 
@@ -718,13 +723,42 @@ void Explore::makePlan()
     resuming_ = false;
   }
 
-  // IMPORTANT: Don't preempt Nav2 goals from the explorer.
-  // Preempting causes bt_navigator "goal preemption request", cancels follow_path,
-  // and can trigger recovery behaviors (spin/backup) and frequent replans.
-  // Wait for the current NavigateToPose to finish (result_callback -> reachedGoal())
-  // before sending a new goal.
+  // IMPORTANT: Don't continuously preempt Nav2 goals from the explorer.
+  // However, if Nav2 never reports a result (rare, but happens when the stack is stressed),
+  // we must recover, otherwise exploration will appear "stuck" forever.
   if (goal_in_progress_) {
-    RCLCPP_DEBUG(logger_, "Goal in progress, not sending a new goal (preemption disabled)");
+    // If we don't have bookkeeping yet (e.g., after restart), initialize it.
+    if (!has_active_goal) {
+      has_active_goal = true;
+      last_goal_accepted_time = this->now();
+      last_goal_target = prev_goal_;
+    }
+
+    const double max_goal_active_seconds = 30.0;  // watchdog
+    rclcpp::Duration active_for = this->now() - last_goal_accepted_time;
+
+    if (active_for.seconds() > max_goal_active_seconds) {
+      RCLCPP_WARN(logger_,
+                  "Goal appears stuck (active for %.1f s). Canceling Nav2 goal and blacklisting target (%.2f, %.2f).",
+                  active_for.seconds(), last_goal_target.x, last_goal_target.y);
+
+      // Cancel all NavigateToPose goals (we don't store the goal handle reliably)
+      try {
+        move_base_client_->async_cancel_all_goals();
+      } catch (...) {
+        // Best-effort; even if cancel fails, we'll drop local state to allow recovery
+      }
+
+      goal_in_progress_ = false;
+      has_active_goal = false;
+      frontier_blacklist_.push_back(last_goal_target);
+      makePlan();
+      return;
+    }
+
+    RCLCPP_INFO_THROTTLE(logger_, *this->get_clock(), 5000,
+                         "Goal in progress (preemption disabled). Active for %.1f s, target (%.2f, %.2f).",
+                         active_for.seconds(), last_goal_target.x, last_goal_target.y);
     return;
   }
 
@@ -745,9 +779,14 @@ void Explore::makePlan()
         if (!goal_handle) {
           RCLCPP_WARN(logger_, "Goal was rejected by Nav2!");
           goal_in_progress_ = false;
+          has_active_goal = false;
           return;
         }
         goal_in_progress_ = true;
+        // Update watchdog bookkeeping on accept
+        has_active_goal = true;
+        last_goal_accepted_time = this->now();
+        last_goal_target = target_position;
         RCLCPP_INFO(logger_, "Goal accepted by Nav2, navigating to (%.2f, %.2f)",
                     target_position.x, target_position.y);
       };
@@ -759,6 +798,11 @@ void Explore::makePlan()
         reachedGoal(result, target_position);
       };
   move_base_client_->async_send_goal(goal, send_goal_options);
+
+  // Set watchdog start point optimistically; updated on accept callback as well
+  has_active_goal = true;
+  last_goal_accepted_time = this->now();
+  last_goal_target = target_position;
 }
 
 void Explore::returnToInitialPose()
