@@ -718,10 +718,13 @@ void Explore::makePlan()
     resuming_ = false;
   }
 
-  // If we're still pursuing the same goal and it's still active, do nothing.
-  // If the goal already finished (or was never accepted), allow selecting/sending a new goal.
-  if (same_goal && goal_in_progress_) {
-    RCLCPP_DEBUG(logger_, "Still pursuing same goal (goal active), skipping");
+  // IMPORTANT: Don't preempt Nav2 goals from the explorer.
+  // Preempting causes bt_navigator "goal preemption request", cancels follow_path,
+  // and can trigger recovery behaviors (spin/backup) and frequent replans.
+  // Wait for the current NavigateToPose to finish (result_callback -> reachedGoal())
+  // before sending a new goal.
+  if (goal_in_progress_) {
+    RCLCPP_DEBUG(logger_, "Goal in progress, not sending a new goal (preemption disabled)");
     return;
   }
 
